@@ -3,13 +3,13 @@ import { events } from "@/lib/utils";
 import { RegistrationForm } from "@/components/RegistrationForm";
 
 type EventPageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function EventPage({ params }: EventPageProps) {
-  const { id } = params;
+  const { id } = await params;
   const event = events.find((item) => item.id === id);
 
   if (!event) {

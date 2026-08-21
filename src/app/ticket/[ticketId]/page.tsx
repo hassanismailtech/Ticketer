@@ -4,13 +4,13 @@ import { TicketQR } from "@/components/TicketQR";
 import { formatDisplayDate } from "@/lib/utils";
 
 type TicketPageProps = {
-  params: {
+  params: Promise<{
     ticketId: string;
-  };
+  }>;
 };
 
 export default async function TicketPage({ params }: TicketPageProps) {
-  const { ticketId } = params;
+  const { ticketId } = await params;
   const ticket = await prisma.ticket.findUnique({
     where: { ticketId },
   });
