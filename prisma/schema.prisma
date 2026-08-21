@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Ticket {
+  id           String   @id @default(uuid())
+  ticketId     String   @unique
+  firstName    String
+  lastName     String
+  emailAddress  String
+  eventId      String
+  eventName    String
+  eventDate    String
+  eventTime    String
+  eventLocation String
+  createdAt    DateTime @default(now())
+}
