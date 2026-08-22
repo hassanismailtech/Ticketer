@@ -7,8 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 
 const adapter = new PrismaPg({
 	connectionString:
-		process.env.DATABASE_URL ??
-		"postgresql://postgres:postgres@127.0.0.1:5432/ticketer?schema=public",
+		process.env.DATABASE_URL ?? "",
 });
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
