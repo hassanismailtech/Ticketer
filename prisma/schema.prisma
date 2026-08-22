@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = "postgresql://postgres:postgres@127.0.0.1:5432/ticketer?schema=public"
 }
 
 model Ticket {
