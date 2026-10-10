@@ -7,16 +7,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Event {
+  id          String       @id @default(uuid())
+  slug        String       @unique
+  title       String
+  tagline     String?
+  description String
+  category    String       @default("Technology")
+  bannerUrl   String?
+  location    String
+  venue       String
+  date        String
+  time        String
+  capacity    Int          @default(200)
+  status      String       @default("PUBLISHED")
+  isFeatured  Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tiers       TicketTier[]
+  tickets     Ticket[]
+}
+
+model TicketTier {
+  id          String   @id @default(uuid())
+  eventId     String
+  name        String
+  description String?
+  price       Float    @default(0)
+  capacity    Int      @default(100)
+  soldCount   Int      @default(0)
+  color       String   @default("#6366f1")
+  perks       String   @default("Standard Admission")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets     Ticket[]
+}
+
 model Ticket {
-  id           String   @id @default(uuid())
-  ticketId     String   @unique
+  id           String        @id @default(uuid())
+  ticketId     String        @unique
+  eventId      String
+  tierId       String
   firstName    String
   lastName     String
-  emailAddress  String
-  eventId      String
-  eventName    String
-  eventDate    String
-  eventTime    String
-  eventLocation String
-  createdAt    DateTime @default(now())
+  emailAddress String
+  phone        String?
+  qrPayload    String
+  status       String        @default("VALID")
+  checkedInAt  DateTime?
+  checkedInBy  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tier         TicketTier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  checkInLogs  CheckInLog[]
+}
+
+model CheckInLog {
+  id         String   @id @default(uuid())
+  ticketId   String
+  eventId    String
+  status     String
+  scannedBy  String   @default("Gatekeeper Terminal #1")
+  notes      String?
+  createdAt  DateTime @default(now())
+
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }

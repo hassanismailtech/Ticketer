@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Ticketer by HIT.DEV",
-  description: "Lightweight event ticketing and QR check-in web app.",
+  title: "Ticketer Pro — High-End Event Engine & Cryptographic Check-In",
+  description:
+    "Next-generation event ticketing platform with cryptographically signed QR passes, anti-fraud turnstile verification, and real-time organizer telemetry.",
+  keywords: ["event ticketing", "qr check-in", "gatekeeper", "event management", "cryptographic tickets"],
+  authors: [{ name: "HIT.DEV" }],
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -12,8 +17,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="bg-zinc-50 text-zinc-900 antialiased">{children}</body>
+    <html lang="en" className="dark">
+      <body className="min-h-screen bg-[#06070a] text-zinc-100 antialiased selection:bg-brand-500 selection:text-white">
+        <Navbar />
+        {children}
+      </body>
     </html>
   );
 }

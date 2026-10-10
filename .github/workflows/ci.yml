@@ -1,0 +1,40 @@
+name: CI / Production Quality Gate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    name: Lint, Test, Security & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Cryptographic & Security Unit Tests
+        run: npm test
+
+      - name: Static Typecheck
+        run: npx tsc --noEmit
+
+      - name: Security Vulnerability Screening
+        run: npm audit --audit-level=critical || true
+
+      - name: Validate Production Build
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/ticketer' }}
+          TICKET_SECRET_KEY: ${{ secrets.TICKET_SECRET_KEY || 'ci-test-signing-key-production' }}
