@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Ticketer Pro — High-End Event Engine & Cryptographic Check-In",
@@ -21,6 +22,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#06070a] text-zinc-100 antialiased selection:bg-brand-500 selection:text-white">
         <Navbar />
         {children}
+        <Analytics />
       </body>
     </html>
   );
