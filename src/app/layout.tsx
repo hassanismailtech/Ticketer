@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 
 export const metadata: Metadata = {
   title: "Ticketer by HIT.DEV — Simple event registration",
@@ -19,8 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#fbfaf8] text-[#171617] antialiased selection:bg-[#f5dfb4] selection:text-[#171617]">
-        <Navbar />
-        {children}
+        <AuthSessionProvider>
+          <Navbar />
+          {children}
+        </AuthSessionProvider>
       </body>
     </html>
   );

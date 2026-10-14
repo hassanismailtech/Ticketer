@@ -5,6 +5,13 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import type { DefaultSession } from "next-auth";
+
+declare module "next-auth" {
+  interface Session {
+    user: { id: string; role: string } & DefaultSession["user"];
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -26,12 +33,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        return { id: user.id, name: user.name, email: user.email };
+        return { id: user.id, name: user.name, email: user.email, role: user.role };
       },
     }),
     ...(process.env.EMAIL_SERVER && process.env.EMAIL_FROM
       ? [Email({ server: process.env.EMAIL_SERVER, from: process.env.EMAIL_FROM })]
       : []),
   ],
+  callbacks: {
+    async session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+        session.user.role = "role" in user ? String(user.role) : "ATTENDEE";
+      }
+      return session;
+    },
+  },
   pages: { signIn: "/login" },
 });

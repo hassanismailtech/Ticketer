@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { INITIAL_EVENTS } from "@/lib/events-data";
@@ -29,6 +30,7 @@ const registrationSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
     const body = await request.json();
     const parsed = registrationSchema.safeParse(body);
 
@@ -129,6 +131,7 @@ export async function POST(request: Request) {
             tierId: selectedTier.id,
             qrPayload,
             status: "VALID",
+            userId: session?.user?.id,
           },
         });
       }

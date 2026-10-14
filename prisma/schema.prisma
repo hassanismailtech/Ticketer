@@ -8,25 +8,25 @@ datasource db {
 }
 
 model Event {
-  id          String       @id @default(uuid())
-  slug        String       @unique
+  id          String   @id @default(uuid())
+  slug        String   @unique
   title       String
   tagline     String?
   description String
-  category    String       @default("Technology")
+  category    String   @default("Technology")
   bannerUrl   String?
   location    String
   venue       String
   date        String
   time        String
-  capacity    Int          @default(200)
-  status      String       @default("PUBLISHED")
-  isFeatured  Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  capacity    Int      @default(200)
+  status      String   @default("PUBLISHED")
+  isFeatured  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  tiers       TicketTier[]
-  tickets     Ticket[]
+  tiers   TicketTier[]
+  tickets Ticket[]
 }
 
 model TicketTier {
@@ -42,13 +42,13 @@ model TicketTier {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tickets     Ticket[]
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
 }
 
 model Ticket {
-  id           String        @id @default(uuid())
-  ticketId     String        @unique
+  id           String    @id @default(uuid())
+  ticketId     String    @unique
   eventId      String
   tierId       String
   firstName    String
@@ -56,29 +56,29 @@ model Ticket {
   emailAddress String
   phone        String?
   qrPayload    String
-  status       String        @default("VALID")
+  status       String    @default("VALID")
   checkedInAt  DateTime?
   checkedInBy  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   userId       String?
 
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tier         TicketTier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  checkInLogs  CheckInLog[]
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tier        TicketTier   @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  checkInLogs CheckInLog[]
 }
 
 model CheckInLog {
-  id         String   @id @default(uuid())
-  ticketId   String
-  eventId    String
-  status     String
-  scannedBy  String   @default("Gatekeeper Terminal #1")
-  notes      String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(uuid())
+  ticketId  String
+  eventId   String
+  status    String
+  scannedBy String   @default("Gatekeeper Terminal #1")
+  notes     String?
+  createdAt DateTime @default(now())
 
-  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 }
 
 model User {
@@ -88,6 +88,7 @@ model User {
   emailVerified DateTime?
   image         String?
   passwordHash  String?
+  role          String    @default("ATTENDEE")
   accounts      Account[]
   sessions      Session[]
   tickets       Ticket[]

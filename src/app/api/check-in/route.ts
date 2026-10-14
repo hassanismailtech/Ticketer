@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyQrPayload } from "@/lib/crypto";
 
@@ -18,6 +19,12 @@ if (!globalThis.checkInScanLogs) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    const role = session?.user?.role;
+    if (!session || (role !== "GATEKEEPER" && role !== "ORGANIZER" && role !== "ADMIN")) {
+      return NextResponse.json({ status: "UNAUTHORIZED", message: "Staff authentication required." }, { status: 401 });
+    }
+
     const { scannedPayload, operator = "Gate 1 Main Turnstile" } = await request.json();
 
     if (!scannedPayload || typeof scannedPayload !== "string") {
@@ -158,6 +165,12 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const session = await auth();
+  const role = session?.user?.role;
+  if (!session || (role !== "GATEKEEPER" && role !== "ORGANIZER" && role !== "ADMIN")) {
+    return NextResponse.json({ message: "Staff authentication required." }, { status: 401 });
+  }
+
   // Returns recent check-in scan stream and statistics
   const logs = globalThis.checkInScanLogs?.slice(0, 50) || [];
   const totalScans = globalThis.checkInScanLogs?.length || 0;

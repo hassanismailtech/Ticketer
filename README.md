@@ -1,243 +1,210 @@
 # TICKETER by HIT.DEV
-### Enterprise Event Ticketing Engine & Cryptographic Turnstile Suite
 
-A mission-critical event ticketing platform engineered for high-concurrency conferences, music festivals, and private summits. Built with **Next.js 15 (App Router, React 19)**, **Prisma ORM**, **PostgreSQL / Neon Connection Pooling**, and **Tailwind CSS**.
+Lightweight event discovery, registration, secure QR tickets, and role-aware venue operations for modern events.
 
-Featuring **HMAC-SHA256 cryptographically signed QR passes**, **anti-screenshot pulsing radar watermarks**, an in-browser **Gatekeeper Camera Scanner** with audio chimes & haptic vibration, and a live **Organizer Command Center**.
+Ticketer is built with **Next.js 15 App Router**, **React 19**, **TypeScript**, **Prisma**, **PostgreSQL on Neon**, **Auth.js**, and **Tailwind CSS**. The public experience is attendee-first: discover an event, choose a pass, register, and keep the resulting QR ticket in an account. Staff tools are separated behind authenticated roles.
 
----
+## Product Flows
 
-## Live Demo & Deliverables
+### Attendee
 
-- **Live Production URL:** [https://ticketer-9lmj-rho.vercel.app/](https://ticketer-9lmj-rho.vercel.app/)
-- **Repository:** [https://github.com/hassanismailtech/Ticketer](https://github.com/hassanismailtech/Ticketer)
-- **Gatekeeper Scanner Portal:** `/scanner`
-- **Organizer Command Center:** `/admin`
+1. Browse featured and upcoming events at `/`.
+2. Open an event at `/event/[id]`.
+3. Choose a tier and register.
+4. View the secure pass at `/ticket/[ticketId]`.
+5. Sign in at `/login` or create an account at `/signup`.
+6. View account-linked tickets at `/account`.
 
----
+Registration remains available to guests. When an attendee is signed in, the ticket is associated with their account and appears in `/account`.
 
-## Architectural Pillars
+### Organizer
+
+Organizers and administrators access the operations workspace at `/admin`. The workspace includes attendee manifests, attendance KPIs, status controls, and CSV export.
+
+### Gatekeeper
+
+Gatekeepers access `/scanner` to verify QR passes using a camera or manual payload entry. The scanner provides admission results, duplicate-entry detection, haptic feedback, audio feedback, and a recent audit stream.
+
+Anonymous visitors do not see staff destinations in the public navigation. `/admin` and `/scanner` are server-protected and redirect unauthenticated or unauthorized users.
+
+## Routes
+
+| Route | Purpose | Access |
+| :--- | :--- | :--- |
+| `/` | Featured event discovery and event calendar | Public |
+| `/event/[id]` | Event details, tiers, and registration | Public |
+| `/ticket/[ticketId]` | Digital QR ticket pass | Public ticket link |
+| `/login` | Password, Google, and email-link sign in | Public |
+| `/signup` | Password account creation | Public |
+| `/account` | Signed-in attendee tickets | Authenticated |
+| `/admin` | Organizer operations workspace | `ORGANIZER`, `ADMIN` |
+| `/scanner` | Gatekeeper QR verification terminal | `GATEKEEPER`, `ORGANIZER`, `ADMIN` |
+
+## Architecture
 
 ```mermaid
 graph TD
-    A[Attendee Browser] -->|Browse & Select Tier| B[Event Detail Page]
-    B -->|Submit Credentials| C[POST /api/register]
-    C -->|HMAC-SHA256 Sign| D[Signed QR Generator]
-    C -->|Atomic Capacity Check| E[(PostgreSQL / Neon DB)]
-    C -->|Fallback Cache| F[Resilient Memory Store]
-    D --> G[Digital Wallet Pass /ticket/id]
-    
-    H[Venue Security Gatekeeper] -->|Camera / Laser Scan| I[Turnstile App /scanner]
-    I -->|Verify Signature & Status| J[POST /api/check-in]
-    J -->|Audit Log & Status Toggle| E
-    J -->|Audio Chime & Haptics| I
-    
-    K[Event Director] -->|Real-Time Telemetry| L[Organizer Dashboard /admin]
+    A[Attendee] --> B[Event Discovery /]
+    B --> C[Event Details /event/id]
+    C --> D[POST /api/register]
+    D --> E[Signed QR Ticket /ticket/ticketId]
+    E --> F[Attendee Account /account]
+
+    G[Auth.js] --> H[(Neon PostgreSQL)]
+    D --> H
+    I[Staff Scanner /scanner] --> J[POST /api/check-in]
+    J --> H
+    K[Organizer Workspace /admin] --> H
 ```
 
-### 1. Resilient Registration Core
-- **Database Engine:** PostgreSQL via `@prisma/adapter-pg` backed by an instantiated `pg.Pool` connection pool with automatic SSL negotiation.
-- **Fail-Safe In-Memory Ledger:** Hybrid caching layer ensures 100% registration and gatekeeper uptime even during remote database maintenance windows.
-- **Atomic Inventory Control:** Pass tiers (`General Admission`, `VIP All-Access`, `Backstage Deck`) validate remaining capacity prior to reservation, preventing overbooking.
+## Security Model
 
-### 2. Cryptographic Ticket Verification
-- **Tamper-Evident Token Architecture:** QR passes do not expose bare UUIDs. They generate signed cryptographic tokens:
-  ```text
-  Format: TK1.<ticketId>.<issuedAt>.<hmacSignature>
-  ```
-- **Constant-Time Verification:** Tokens are verified using Node.js `crypto.timingSafeEqual` against the organizer secret key, mathematically preventing ticket forgery.
-- **Dynamic Anti-Screenshot Radar:** Client-side rotating animation prevents attendees from sharing static screenshots.
-- **Double-Entry Elimination:** Gatekeeper turnstiles enforce strict status tracking (`VALID` ➔ `CHECKED_IN`). Duplicate scans are immediately flagged with original check-in timestamps and operator identity.
+- Auth.js uses the Prisma adapter with database-backed sessions.
+- Supported sign-in methods are Google OAuth, email and password, and optional email magic links.
+- Passwords are hashed with `bcryptjs`; plaintext passwords are never stored.
+- User roles default to `ATTENDEE`. Staff roles are `GATEKEEPER`, `ORGANIZER`, and `ADMIN`.
+- `/admin` and `/scanner` use server-side role checks in route layouts.
+- `POST` and `GET /api/check-in` enforce staff authentication independently of the UI.
+- Authenticated registrations store the signed-in user ID on the ticket.
+- QR payloads use HMAC-SHA256 signatures and constant-time verification.
+- `TICKET_SECRET_KEY`, `AUTH_SECRET`, database credentials, OAuth secrets, and SMTP credentials must remain environment variables.
+- The application sets security headers including `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a restricted `Permissions-Policy`.
 
-### 3. Integrated Gatekeeper Scanner (`/scanner`)
-- **Direct Browser Camera Viewfinder:** High-performance video scanner utilizing WebRTC camera feeds.
-- **Web Audio API Feedback Synthesizer:**
-  - **Access Granted:** High-frequency two-tone chime (`D5` to `A5`).
-  - **Access Denied / Duplicate:** Low-frequency warning buzzer.
-- **Haptic Feedback:** Direct vibration pulses on mobile gate devices.
-- **Live Turnstile Stream:** Second-by-second scan audit logging.
+Role assignment is intentionally not self-service. New accounts are attendees. Promote trusted staff accounts directly in the database or through a future administrative role-management workflow.
 
-### 4. Organizer Command Center (`/admin`)
-- Real-time attendance KPIs: Total Registered, Admitted Through Doors, Check-In Velocity (%), and Fraud Attempts.
-- Searchable attendee manifest with manual door overrides.
-- One-click **Attendee CSV Export** for offline event manifests and CRM synchronization.
+## Data Layer
 
----
+Neon is the current PostgreSQL provider. Prisma connects through `@prisma/adapter-pg` and `pg.Pool`, with SSL enabled for remote/Neon connections. Supabase is not required for the current architecture because it would duplicate the existing PostgreSQL and authentication responsibilities.
+
+The schema includes:
+
+- `Event` and `TicketTier` for event inventory.
+- `Ticket` for attendee identity, QR payload, status, and optional `userId` ownership.
+- `CheckInLog` for gate audit records.
+- `User`, `Account`, `Session`, and `VerificationToken` for Auth.js.
+
+Run the current schema against the configured database with:
+
+```bash
+npx prisma db push
+npx prisma generate
+```
+
+The application retains an in-memory fallback for ticket registration and scan logs, but production data and durable authentication require a working PostgreSQL connection.
 
 ## Technology Stack
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Framework** | Next.js 15.1.6 (App Router, React 19) | Server Components, dynamic streaming, and edge routes |
-| **Language** | TypeScript 5.7+ | End-to-end static typing & Zod contract validation |
-| **Styling** | Tailwind CSS 3.4 | Responsive white, gold, and brown interface |
-| **Database** | PostgreSQL + Neon Serverless | Scalable relational event storage |
-| **ORM** | Prisma ORM 6.19.3 (`@prisma/adapter-pg`) | Type-safe schema definition and migrations |
-| **Cryptography** | Node.js `crypto` (HMAC-SHA256) | Tamper-proof digital ticket signing & verification |
-| **Audio Engine** | Web Audio API | Zero-dependency turnstile feedback sound synthesizer |
-| **QR Engine** | `qrcode.react` (SVG) | High-density SVG barcode rendering |
-
----
-
-## Relational Database Schema
-
-```prisma
-model Event {
-  id          String       @id @default(uuid())
-  slug        String       @unique
-  title       String
-  tagline     String?
-  description String
-  category    String       @default("Technology")
-  bannerUrl   String?
-  location    String
-  venue       String
-  date        String
-  time        String
-  capacity    Int          @default(200)
-  status      String       @default("PUBLISHED")
-  isFeatured  Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  tiers       TicketTier[]
-  tickets     Ticket[]
-}
-
-model TicketTier {
-  id          String   @id @default(uuid())
-  eventId     String
-  name        String
-  description String?
-  price       Float    @default(0)
-  capacity    Int      @default(100)
-  soldCount   Int      @default(0)
-  color       String   @default("#6366f1")
-  perks       String   @default("Standard Admission")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tickets     Ticket[]
-}
-
-model Ticket {
-  id           String        @id @default(uuid())
-  ticketId     String        @unique
-  eventId      String
-  tierId       String
-  firstName    String
-  lastName     String
-  emailAddress String
-  phone        String?
-  qrPayload    String
-  status       String        @default("VALID")
-  checkedInAt  DateTime?
-  checkedInBy  String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  event        Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  tier         TicketTier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
-  checkInLogs  CheckInLog[]
-}
-
-model CheckInLog {
-  id         String   @id @default(uuid())
-  ticketId   String
-  eventId    String
-  status     String
-  scannedBy  String   @default("Gatekeeper Terminal #1")
-  notes      String?
-  createdAt  DateTime @default(now())
-
-  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-}
-```
-
----
+| Framework | Next.js 15.1.11 | App Router, server rendering, route handlers |
+| Language | TypeScript 5.7+ | Static typing and build-time validation |
+| UI | React 19, Tailwind CSS 3.4 | Light event-discovery and operations interfaces |
+| Database | PostgreSQL on Neon | Durable events, tickets, users, and audit data |
+| ORM | Prisma 6.19.3 | Schema and database access |
+| Authentication | Auth.js 5 beta | Google, credentials, email links, database sessions |
+| Password hashing | bcryptjs | Password verification and storage safety |
+| Ticket security | Node.js crypto | HMAC-SHA256 QR signing and verification |
+| QR rendering | qrcode.react | Digital ticket QR codes |
+| Deployment | Vercel | Preview and production deployments |
 
 ## Local Development
 
-### 1. Prerequisites
-- Node.js 18.18+ or Node.js 20+
-- npm or pnpm
+### Prerequisites
 
-### 2. Setup
+- Node.js 20 or newer
+- npm
+- A PostgreSQL database, currently Neon
+
+### Setup
+
 ```bash
 git clone https://github.com/hassanismailtech/Ticketer.git
 cd Ticketer
 npm install
 ```
 
-### 3. Environment Variables
-Create a `.env` file in the project root:
+Create `.env` in the project root. Do not commit it:
+
 ```env
 DATABASE_URL="postgresql://username:password@ep-sample.region.neon.tech/neondb?sslmode=require"
-TICKET_SECRET_KEY="super-secret-cryptographic-signing-key"
-AUTH_SECRET="generate-a-long-random-value"
+TICKET_SECRET_KEY="a-long-random-ticket-signing-secret"
+AUTH_SECRET="a-long-random-auth-secret"
 AUTH_GOOGLE_ID="your-google-client-id"
 AUTH_GOOGLE_SECRET="your-google-client-secret"
 EMAIL_SERVER="smtp://username:password@smtp.example.com:587"
 EMAIL_FROM="Ticketer <tickets@example.com>"
 ```
 
-### 4. Database Sync
+`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `EMAIL_SERVER`, and `EMAIL_FROM` are optional during initial development. Google and magic-link sign-in become available when their values are configured. `AUTH_SECRET`, `DATABASE_URL`, and `TICKET_SECRET_KEY` are required for a real deployment.
+
+Sync the database and start the app:
+
 ```bash
 npx prisma db push
-```
-
-### 5. Start Development Server
-```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) to view the application.
 
----
+Open [http://localhost:3000](http://localhost:3000).
 
-## API Specifications
+## Commands
 
-### 1. Issue Ticket Pass
-- **Endpoint:** `POST /api/register`
-- **Body:**
-  ```json
-  {
-    "firstName": "Alex",
-    "lastName": "Morgan",
-    "emailAddress": "alex.morgan@company.com",
-    "eventId": "synapse-ai-summit-2026",
-    "tierId": "tier-synapse-vip",
-    "eventName": "SYNAPSE 2026: Global AI Summit",
-    "eventDate": "2026-11-14",
-    "eventTime": "09:00 AM WAT",
-    "eventLocation": "Grand Horizon Ballroom, Lagos"
-  }
-  ```
-- **Response (201 Created):**
-  ```json
-  {
-    "status": "SUCCESS",
-    "ticketId": "TCK-8F2A-91D0",
-    "message": "Pass reserved successfully."
-  }
-  ```
+```bash
+npm run dev               # Start local development
+npm run build             # Create a production build
+npm run start             # Run the production build
+npm run typecheck         # Run TypeScript validation
+npm test                  # Run cryptographic regression tests
+npx prisma generate       # Generate the Prisma client
+npx prisma db push        # Sync schema to the configured database
+npm run vercel:preview    # Deploy a Vercel preview with npx
+npm run vercel:production # Deploy to the Vercel production target
+```
 
-### 2. Gatekeeper Turnstile Verification
-- **Endpoint:** `POST /api/check-in`
-- **Body:**
-  ```json
-  {
-    "scannedPayload": "TK1.TCK-8F2A-91D0.1791628100.8f1a...",
-    "operator": "Gate 1 Main Turnstile"
-  }
-  ```
-- **Responses:**
-  - `200 GRANTED`: Access approved, attendee details returned.
-  - `200 ALREADY_CHECKED_IN`: Double-entry blocked, original check-in timestamp returned.
-  - `404 INVALID`: Counterfeit or unlisted pass.
+Before production deployment, configure the environment variables in Vercel for both the relevant Preview and Production environments. A successful CI build alone does not promote a deployment to the production alias; the deployment must target Production or be promoted in Vercel.
 
----
+## API
+
+### `POST /api/register`
+
+Issues a signed ticket. The request includes attendee details, event ID, tier ID, and event display metadata. The response returns a ticket ID and the ticket page location can be constructed as `/ticket/{ticketId}`.
+
+### `POST /api/check-in`
+
+Requires a `GATEKEEPER`, `ORGANIZER`, or `ADMIN` session.
+
+```json
+{
+  "scannedPayload": "TK1.TCK-8F2A-91D0.1791628100.8f1a...",
+  "operator": "Gate 1 Main Turnstile"
+}
+```
+
+Possible outcomes include `GRANTED`, `ALREADY_CHECKED_IN`, `INVALID`, and `UNAUTHORIZED`.
+
+### `GET /api/check-in`
+
+Returns the recent scan stream and summary statistics. It also requires a staff role.
+
+### Auth.js
+
+The Auth.js route handler is available at `/api/auth/[...nextauth]`. Account creation uses `POST /api/auth/signup`.
+
+## Deployment Checklist
+
+1. Confirm `main` contains the intended changes and CI is green.
+2. Confirm Vercel is connected to the correct GitHub repository and production branch.
+3. Add `DATABASE_URL`, `TICKET_SECRET_KEY`, and `AUTH_SECRET` to Vercel Production.
+4. Add Google OAuth and SMTP variables if those sign-in methods are required.
+5. Add the deployed callback URL to Google OAuth configuration: `https://your-production-domain.com/api/auth/callback/google`.
+6. Run the Prisma schema sync against the production database before using account or role features.
+7. Deploy with `npm run vercel:production` or promote the successful production-branch deployment in Vercel.
+8. Verify `/`, `/login`, `/account`, `/admin`, `/scanner`, ticket issuance, and staff check-in on the production domain.
+
+## Live Links
+
+- Production: [ticketer-9lmj-rho.vercel.app](https://ticketer-9lmj-rho.vercel.app/)
+- Repository: [github.com/hassanismailtech/Ticketer](https://github.com/hassanismailtech/Ticketer)
 
 ## License & Authors
 
-Developed by **HIT.DEV** for enterprise event organizers and high-growth conferences.
+Developed by **HIT.DEV** for event organizers and high-growth conferences.

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { UnicornEvent, formatShortDate } from "@/lib/events-data";
 
 type EventCardProps = {
@@ -12,6 +13,10 @@ export function EventCard({ event }: EventCardProps) {
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-xl border border-[#e7e1dc] bg-white p-4 transition duration-200 hover:border-[#d3b27d] hover:shadow-[0_8px_22px_rgba(93,63,33,0.08)]">
+      <div className="relative mb-1 h-36 overflow-hidden rounded-lg bg-[#f5ead8]">
+        <Image src={event.bannerUrl} alt="" fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover transition duration-500 group-hover:scale-105" />
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#6b4a2c]">{event.category}</span>
+      </div>
       <div className="flex flex-1 flex-col justify-between space-y-4">
         <div className="space-y-2">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#bd7a12]">Event</p>
