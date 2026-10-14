@@ -22,7 +22,7 @@
     "@types/pg": "^8.23.1",
     "@vercel/analytics": "^2.0.1",
     "bcryptjs": "^3.0.3",
-    "next": "15.1.11",
+    "next": "15.5.28",
     "next-auth": "^5.0.0-beta.32",
     "nodemailer": "^8.0.11",
     "pg": "^8.13.3",
