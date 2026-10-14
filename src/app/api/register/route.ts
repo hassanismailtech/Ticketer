@@ -124,11 +124,11 @@ export async function POST(request: Request) {
             firstName,
             lastName,
             emailAddress,
+            phone: phone || null,
             eventId: event.id,
-            eventName: event.title,
-            eventDate: event.date,
-            eventTime: event.time,
-            eventLocation: `${event.venue}, ${event.location}`,
+            tierId: selectedTier.id,
+            qrPayload,
+            status: "VALID",
           },
         });
       }

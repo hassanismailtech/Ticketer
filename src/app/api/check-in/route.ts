@@ -43,6 +43,10 @@ export async function POST(request: Request) {
       try {
         const dbTicket = await prisma.ticket.findUnique({
           where: { ticketId },
+          include: {
+            event: true,
+            tier: true,
+          },
         });
         if (dbTicket) {
           ticket = {
@@ -50,12 +54,14 @@ export async function POST(request: Request) {
             firstName: dbTicket.firstName,
             lastName: dbTicket.lastName,
             emailAddress: dbTicket.emailAddress,
-            eventName: dbTicket.eventName,
-            eventDate: dbTicket.eventDate,
-            eventTime: dbTicket.eventTime,
-            eventLocation: dbTicket.eventLocation,
-            tierName: "General Admission",
-            status: "VALID",
+            eventName: dbTicket.event.title,
+            eventDate: dbTicket.event.date,
+            eventTime: dbTicket.event.time,
+            eventLocation: `${dbTicket.event.venue}, ${dbTicket.event.location}`,
+            tierName: dbTicket.tier.name,
+            status: dbTicket.status,
+            checkedInAt: dbTicket.checkedInAt?.toISOString() ?? null,
+            checkedInBy: dbTicket.checkedInBy,
             createdAt: dbTicket.createdAt,
           };
           globalThis.inMemoryTickets?.set(ticketId, ticket);
