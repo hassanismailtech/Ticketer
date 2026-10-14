@@ -1,4 +1,4 @@
-# ⚡ TICKETER PRO by HIT.DEV
+# TICKETER by HIT.DEV
 ### Enterprise Event Ticketing Engine & Cryptographic Turnstile Suite
 
 A mission-critical event ticketing platform engineered for high-concurrency conferences, music festivals, and private summits. Built with **Next.js 15 (App Router, React 19)**, **Prisma ORM**, **PostgreSQL / Neon Connection Pooling**, and **Tailwind CSS**.
@@ -7,7 +7,7 @@ Featuring **HMAC-SHA256 cryptographically signed QR passes**, **anti-screenshot 
 
 ---
 
-## 🚀 Live Demo & Deliverables
+## Live Demo & Deliverables
 
 - **Live Production URL:** [https://ticketer-9lmj-rho.vercel.app/](https://ticketer-9lmj-rho.vercel.app/)
 - **Repository:** [https://github.com/hassanismailtech/Ticketer](https://github.com/hassanismailtech/Ticketer)
@@ -16,7 +16,7 @@ Featuring **HMAC-SHA256 cryptographically signed QR passes**, **anti-screenshot 
 
 ---
 
-## 🏛️ Architectural Pillars
+## Architectural Pillars
 
 ```mermaid
 graph TD
@@ -35,12 +35,12 @@ graph TD
     K[Event Director] -->|Real-Time Telemetry| L[Organizer Dashboard /admin]
 ```
 
-### 1. Resilient High-Concurrency Core
+### 1. Resilient Registration Core
 - **Database Engine:** PostgreSQL via `@prisma/adapter-pg` backed by an instantiated `pg.Pool` connection pool with automatic SSL negotiation.
 - **Fail-Safe In-Memory Ledger:** Hybrid caching layer ensures 100% registration and gatekeeper uptime even during remote database maintenance windows.
 - **Atomic Inventory Control:** Pass tiers (`General Admission`, `VIP All-Access`, `Backstage Deck`) validate remaining capacity prior to reservation, preventing overbooking.
 
-### 2. Cryptographic Anti-Counterfeiting & Fraud Prevention
+### 2. Cryptographic Ticket Verification
 - **Tamper-Evident Token Architecture:** QR passes do not expose bare UUIDs. They generate signed cryptographic tokens:
   ```text
   Format: TK1.<ticketId>.<issuedAt>.<hmacSignature>
@@ -52,8 +52,8 @@ graph TD
 ### 3. Integrated Gatekeeper Scanner (`/scanner`)
 - **Direct Browser Camera Viewfinder:** High-performance video scanner utilizing WebRTC camera feeds.
 - **Web Audio API Feedback Synthesizer:**
-  - 🟢 **Access Granted:** High-frequency pleasant two-tone chime (`D5` ➔ `A5`).
-  - 🔴 **Access Denied / Duplicate:** Low-frequency warning buzzer.
+  - **Access Granted:** High-frequency two-tone chime (`D5` to `A5`).
+  - **Access Denied / Duplicate:** Low-frequency warning buzzer.
 - **Haptic Feedback:** Direct vibration pulses on mobile gate devices.
 - **Live Turnstile Stream:** Second-by-second scan audit logging.
 
@@ -64,13 +64,13 @@ graph TD
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Framework** | Next.js 15.1.6 (App Router, React 19) | Server Components, dynamic streaming, and edge routes |
 | **Language** | TypeScript 5.7+ | End-to-end static typing & Zod contract validation |
-| **Styling** | Tailwind CSS 3.4 (Dark Glassmorphism) | Luxury dark aesthetic, radial glows, perforated ticket styling |
+| **Styling** | Tailwind CSS 3.4 | Responsive white, gold, and brown interface |
 | **Database** | PostgreSQL + Neon Serverless | Scalable relational event storage |
 | **ORM** | Prisma ORM 6.19.3 (`@prisma/adapter-pg`) | Type-safe schema definition and migrations |
 | **Cryptography** | Node.js `crypto` (HMAC-SHA256) | Tamper-proof digital ticket signing & verification |
@@ -79,7 +79,7 @@ graph TD
 
 ---
 
-## 🗄️ Relational Database Schema
+## Relational Database Schema
 
 ```prisma
 model Event {
@@ -157,7 +157,7 @@ model CheckInLog {
 
 ---
 
-## 📦 Local Development
+## Local Development
 
 ### 1. Prerequisites
 - Node.js 18.18+ or Node.js 20+
@@ -175,6 +175,11 @@ Create a `.env` file in the project root:
 ```env
 DATABASE_URL="postgresql://username:password@ep-sample.region.neon.tech/neondb?sslmode=require"
 TICKET_SECRET_KEY="super-secret-cryptographic-signing-key"
+AUTH_SECRET="generate-a-long-random-value"
+AUTH_GOOGLE_ID="your-google-client-id"
+AUTH_GOOGLE_SECRET="your-google-client-secret"
+EMAIL_SERVER="smtp://username:password@smtp.example.com:587"
+EMAIL_FROM="Ticketer <tickets@example.com>"
 ```
 
 ### 4. Database Sync
@@ -190,7 +195,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
-## 🌐 API Specifications
+## API Specifications
 
 ### 1. Issue Ticket Pass
 - **Endpoint:** `POST /api/register`
@@ -233,6 +238,6 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
-## 🛡️ License & Authors
+## License & Authors
 
 Developed by **HIT.DEV** for enterprise event organizers and high-growth conferences.
